@@ -71,15 +71,15 @@ namespace OpenVPN_action
         }
 
        
-        public void Configuration(string openvpnPath, string ovpnPath, string host = "127.0.0.1", int port = 11195)
+        public void Configuration(string openvpnPath, string ovpnPath, string host = null, int port = 0)
         {
             //if (RefuseRun()) return;
             
             base.OpenVPNInfo.SetOpenVPNServicePath(openvpnPath);
             base.OpenVPNInfo.SetOVPNFilePath(ovpnPath);
 
-            Host = host;
-            Port = FreeTcpPort(port);//11195
+            Host = host == null? System.Net.IPAddress.Loopback.ToString(): host; //"127.0.0.1"
+            Port = port == 0? FreeTcpPort(port): port; //11195 tcp port
 
             _NumCycleOfReconnecting = NumCycleOfReconnecting;
 
