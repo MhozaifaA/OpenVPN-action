@@ -87,7 +87,7 @@ namespace OpenVPN_action
             {
                 FileName = base.OpenVPNInfo.GetOpenVPNServicePath(),
                 WindowStyle = ProcessWindowStyle.Hidden,
-                CreateNoWindow = true,
+                //CreateNoWindow = true,
                 UseShellExecute = true,
                 Verb = "runas",
                 Arguments =
@@ -328,7 +328,7 @@ namespace OpenVPN_action
 
         private int FreeTcpPort(int firstport)
         {
-            if (_NumTryConnectPort == NumTryConnectPort)  return firstport;
+            if (firstport != 0 && _NumTryConnectPort == NumTryConnectPort) return firstport;
 
             TcpListener listener = new TcpListener(System.Net.IPAddress.Loopback, 0);
             listener.Start();
