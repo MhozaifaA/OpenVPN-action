@@ -56,8 +56,16 @@ using OpenVPN_action.Enum;
     {
      ...
         openVPN.Configuration(SettingApp.OpenVpn_Path, SettingApp.ovpnFile_Path);
-        openVPN.Start();
+        await openVPN.Start();
         await openVPN.Connect();
+        return;
+    }
+    
+    if(state == ConnectionStates.Connecting)
+    {
+        IsBlockVPN = false;
+        await openVPN.Disconnect();
+        HasAllowVPN = true;
         return;
     }
 
