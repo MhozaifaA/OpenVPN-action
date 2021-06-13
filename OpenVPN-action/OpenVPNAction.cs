@@ -66,7 +66,7 @@ namespace OpenVPN_action
             if (base.OpenVPNInfo.GetConnectionState() == ConnectionStates.UnConfigured)
                 throw new Exception("missed call" + nameof(Configuration));
 
-            Start();
+            await Start();
             await Connect();
         }
 
@@ -105,7 +105,7 @@ namespace OpenVPN_action
          
         }
 
-        public void Start()
+        public async Task Start()
         {
             if (RefuseRun()) return;
 
@@ -125,7 +125,7 @@ namespace OpenVPN_action
                 OnDisConnectedChanged();
             };
 
-            if (!ConnectToPort())
+            if (!(await ConnectToPortAsync()))
                 return;
 
             streamWriter = new StreamWriter(tcpClient.GetStream());
@@ -151,20 +151,26 @@ namespace OpenVPN_action
 
             OnConnectingChanged();
 
-            foreach (var command in ConnectedCommands)
+            try
             {
-                await streamWriter.WriteLineAsync(command);
-                await streamWriter.FlushAsync();
-                await Task.Delay(100);
+                foreach (var command in ConnectedCommands)
+                {
+                    await streamWriter.WriteLineAsync(command);
+                    await streamWriter.FlushAsync();
+                    await Task.Delay(100);
+                }
             }
-           
+            catch (IOException) //diconnecting on connecting
+            {
+            }
+
         }
 
         public async Task Disconnect()
         {
             if (RefuseRun()) return;
 
-            if (streamWriter == null || streamReader == null || tcpClient == null)
+            if (streamWriter == null || streamReader == null || tcpClient == null )//threadCommandReader.ThreadState == System.Threading.ThreadState.Unstarted)
             {
                 try
                 {
@@ -231,7 +237,7 @@ namespace OpenVPN_action
             await Disconnect();
             if(_NumCycleOfReconnecting-- != 0)
             {
-                Start();
+                await Start();
                 await Connect();
             }else
                 OnEndCycleChanged();
@@ -344,9 +350,10 @@ namespace OpenVPN_action
             return base.OpenVPNInfo.GetConnectionState() == ConnectionStates.Corrupted;
         }
 
-        private bool ConnectToPort()
+        private async Task<bool> ConnectToPortAsync()
         {
-            if (--_NumTryConnectPort == 0) {
+            if (--_NumTryConnectPort == 0)
+            {
                 base.OpenVPNInfo.SetConnectionState(ConnectionStates.Corrupted);
                 OnCorruptedChanged();
                 return false;
@@ -357,8 +364,8 @@ namespace OpenVPN_action
                 ProcessId = process.Id;
 
                 tcpClient = new TcpClient();
-                tcpClient.Connect(Host, Port);
-             
+                await tcpClient.ConnectAsync(Host, Port);
+
                 _NumTryConnectPort = NumTryConnectPort;
 
                 return true;
@@ -367,7 +374,7 @@ namespace OpenVPN_action
             {
                 CheckCloseLastProcess();
                 Configuration(base.OpenVPNInfo.GetOpenVPNServicePath(), base.OpenVPNInfo.GetOVPNFilePath());
-                Start();
+                await Start();
                 return false;
             }
         }
